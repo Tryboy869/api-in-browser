@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API in Browser — Telegram Bot</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { padding: 15px; margin: 15px 0; border-radius: 4px; }
+    .info { background: #dbeafe; color: #1e40af; }
+    .success { background: #dcfce7; color: #166534; }
+    .error { background: #fee2e2; color: #991b1b; }
+    #log { background: #f3f4f6; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>🤖 Telegram Bot (Browser-Powered)</h1>
+  
+  <div id="status" class="info">
+    Enter your bot token from @BotFather
+  </div>
+
+  <input type="password" id="token" placeholder="Bot Token (e.g., 1234567890:ABCdef...)">
+  <button onclick="startBot()" id="startBtn">Start Bot</button>
+  <button onclick="stopBot()" id="stopBtn" disabled>Stop Bot</button>
+
+  <h3>Messages Log</h3>
+  <div id="log">Waiting for bot to start...</div>
+
+  <script type="module">
+    import API from '../src/index.js';
+
+    let api = null;
+
+    window.startBot = async () => {
+      const token = document.getElementById('token').value.trim();
+      if (!token) {
+        setStatus('error', 'Please enter a bot token');
+        return;
+      }
+
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      setStatus('info', 'Verifying token...');
+
+      // Verify token
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description);
+
+        setStatus('success', `Bot verified: ${data.result.first_name} (@${data.result.username})`);
+        addLog(`✅ Bot started: @${data.result.username}`);
+      } catch (e) {
+        setStatus('error', `Token verification failed: ${e.message}`);
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        return;
+      }
+
+      // Create API instance
+      api = new API({
+        polling: true,
+        pollingInterval: 2000,
+        debug: false
+      });
+
+      // Define bot commands
+      api.telegramBot(token, {
+        '/start': (msg) => {
+          addLog(`📨 /start from ${msg.from.first_name}`);
+          return `Hello ${msg.from.first_name}! I'm running from a browser tab. No server needed! 🚀`;
+        },
+        '/help': () => {
+          addLog(`📨 /help command`);
+          return `Available commands:\n/start - Start the bot\n/help - Show this help\n/ping - Check if bot is alive\n/time - Get current time`;
+        },
+        '/ping': () => {
+          addLog(`📨 /ping command`);
+          return 'Pong! Bot is alive and running from a browser. 🏓';
+        },
+        '/time': () => {
+          addLog(`📨 /time command`);
+          return `Current time: ${new Date().toLocaleTimeString()}`;
+        },
+        'default': (msg) => {
+          addLog(`📨 Message: "${msg.text.slice(0, 30)}..."`);
+          return `You said: "${msg.text}"\n\nI'm a browser-powered bot! Try /help to see what I can do.`;
+        }
+      });
+
+      // Start API
+      api.listen();
+      addLog('🚀 Polling started. Bot is now live!');
+    };
+
+    window.stopBot = () => {
+      if (api) {
+        api.stop();
+        api = null;
+      }
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      setStatus('info', 'Bot stopped');
+      addLog('⏹️ Bot stopped');
+    };
+
+    function setStatus(type, msg) {
+      const el = document.getElementById('status');
+      el.className = type;
+      el.textContent = msg;
+    }
+
+    function addLog(msg) {
+      const el = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      el.innerHTML += `<div>[${time}] ${msg}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+  </script>
+</body>
+</html>

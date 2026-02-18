@@ -1,0 +1,48 @@
+{
+  "name": "api-in-browser",
+  "version": "1.0.0-beta",
+  "description": "Turn any browser tab into a REST API server. Zero backend needed. IndexedDB storage included.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/test.spec.js",
+    "build": "echo 'No build needed — pure ESM'",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "api",
+    "browser",
+    "rest",
+    "indexeddb",
+    "p2p",
+    "serverless",
+    "local-first",
+    "telegram-bot",
+    "edge-computing",
+    "web-api"
+  ],
+  "author": {
+    "name": "Daouda Abdoul Anzize",
+    "email": "anzizdaouda0@gmail.com",
+    "url": "https://tryboy869.github.io/daa"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tryboy869/api-in-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Tryboy869/api-in-browser/issues"
+  },
+  "homepage": "https://github.com/Tryboy869/api-in-browser#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src/",
+    "examples/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ]
+}

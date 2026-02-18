@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API in Browser — Database Example</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+    h1 { color: #1e293b; }
+    .section { margin: 30px 0; padding: 20px; background: #f8fafc; border-radius: 8px; }
+    input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 4px; }
+    button { padding: 10px 20px; margin: 5px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    #todos { margin-top: 20px; }
+    .todo { padding: 15px; margin: 10px 0; background: white; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .todo.done { opacity: 0.6; text-decoration: line-through; }
+    .empty { text-align: center; color: #94a3b8; padding: 40px; }
+  </style>
+</head>
+<body>
+  <h1>📝 Todo List with Database</h1>
+  <p>All data stored in IndexedDB (browser database). Survives page refresh.</p>
+
+  <div class="section">
+    <h3>Add Todo</h3>
+    <input type="text" id="todoText" placeholder="What needs to be done?" onkeypress="if(event.key==='Enter') addTodo()">
+    <button onclick="addTodo()">Add Todo</button>
+  </div>
+
+  <div class="section">
+    <h3>Your Todos</h3>
+    <div id="todos">
+      <div class="empty">No todos yet. Add one above!</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import API from '../src/index.js';
+
+    const api = new API({ debug: true });
+
+    // Routes
+    api.get('/todos', async (req, res) => {
+      const todos = await api.storage.getAll('todos');
+      res.json(todos);
+    });
+
+    api.post('/todos', async (req, res) => {
+      const todo = {
+        id: Date.now().toString(),
+        text: req.body.text,
+        done: false,
+        createdAt: Date.now()
+      };
+      await api.storage.set('todos', todo.id, todo);
+      res.json(todo);
+    });
+
+    api.put('/todos/:id', async (req, res) => {
+      const todo = await api.storage.get('todos', req.params.id);
+      if (!todo) {
+        res.setStatus(404).json({ error: 'Todo not found' });
+        return;
+      }
+      Object.assign(todo, req.body);
+      await api.storage.set('todos', req.params.id, todo);
+      res.json(todo);
+    });
+
+    api.delete('/todos/:id', async (req, res) => {
+      await api.storage.delete('todos', req.params.id);
+      res.json({ success: true });
+    });
+
+    // Start API
+    await api.listen();
+    console.log('✅ API running. Database ready.');
+
+    // Load todos on start
+    loadTodos();
+
+    // Functions
+    window.addTodo = async () => {
+      const input = document.getElementById('todoText');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const result = await api.server.request('POST', '/todos', {
+        body: { text }
+      });
+
+      input.value = '';
+      await loadTodos();
+    };
+
+    window.toggleTodo = async (id) => {
+      const todos = await api.storage.getAll('todos');
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+
+      await api.server.request('PUT', `/todos/${id}`, {
+        body: { done: !todo.done }
+      });
+
+      await loadTodos();
+    };
+
+    window.deleteTodo = async (id) => {
+      await api.server.request('DELETE', `/todos/${id}`);
+      await loadTodos();
+    };
+
+    async function loadTodos() {
+      const result = await api.server.request('GET', '/todos');
+      const todos = result.body;
+
+      const container = document.getElementById('todos');
+      
+      if (todos.length === 0) {
+        container.innerHTML = '<div class="empty">No todos yet. Add one above!</div>';
+        return;
+      }
+
+      container.innerHTML = todos.map(todo => `
+        <div class="todo ${todo.done ? 'done' : ''}">
+          <div>
+            <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo('${todo.id}')">
+            <span>${todo.text}</span>
+          </div>
+          <button onclick="deleteTodo('${todo.id}')" style="background:#ef4444">Delete</button>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API in Browser — Basic Example</title>
+</head>
+<body>
+  <h1>API in Browser — Basic REST API</h1>
+  <p>Open DevTools Console to see the API in action.</p>
+
+  <button onclick="testAPI()">Test API</button>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import API from '../src/index.js';
+
+    const api = new API({ debug: true });
+
+    let counter = 0;
+
+    // Define routes
+    api.get('/hello', (req, res) => {
+      res.json({ message: 'Hello from browser!' });
+    });
+
+    api.get('/counter', (req, res) => {
+      res.json({ count: counter });
+    });
+
+    api.post('/counter/increment', (req, res) => {
+      counter++;
+      res.json({ count: counter });
+    });
+
+    api.get('/user/:id', (req, res) => {
+      res.json({
+        id: req.params.id,
+        name: `User ${req.params.id}`
+      });
+    });
+
+    // Start API
+    api.listen(() => {
+      console.log('✅ API running in browser');
+      console.log('Try: api.server.request("GET", "/hello")');
+    });
+
+    // Make API globally accessible for testing
+    window.api = api;
+
+    // Test function
+    window.testAPI = async () => {
+      const output = document.getElementById('output');
+      output.textContent = 'Testing API...\n\n';
+
+      const tests = [
+        { method: 'GET', path: '/hello' },
+        { method: 'GET', path: '/counter' },
+        { method: 'POST', path: '/counter/increment' },
+        { method: 'GET', path: '/counter' },
+        { method: 'GET', path: '/user/123' }
+      ];
+
+      for (const test of tests) {
+        const result = await api.server.request(test.method, test.path);
+        output.textContent += `${test.method} ${test.path}\n`;
+        output.textContent += JSON.stringify(result, null, 2) + '\n\n';
+      }
+    };
+  </script>
+</body>
+</html>
