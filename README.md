@@ -1,8 +1,5 @@
 <div align="center">
 
-[![gitsearch](https://raw.githubusercontent.com/Tryboy869/gitsearch/main/assets/badges/badge-indexed.svg)](https://tryboy869.github.io/gitsearch)
-[![gitsearch-tags](https://raw.githubusercontent.com/Tryboy869/gitsearch/main/assets/badges/badge-tags.svg)](#)
-
 <!-- gitsearch: browser-api, local-first, indexeddb, service-worker, telegram-bot, rest-api, polling, web-worker, zero-backend, p2p, javascript, typescript -->
 
 <img src="https://raw.githubusercontent.com/Tryboy869/api-in-browser/main/assets/logo.svg" width="64" height="64" alt="API in Browser"/>
